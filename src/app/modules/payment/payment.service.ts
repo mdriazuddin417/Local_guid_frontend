@@ -3,6 +3,7 @@ import httpStatus from "http-status-codes";
 import { uploadBufferToCloudinary } from "../../config/cloudinary.config";
 import AppError from "../../errorHelpers/AppError";
 import { generatePdf, IInvoiceData } from "../../utils/invoice";
+import QueryBuilder from "../../utils/QueryBuilder_chat";
 import { sendEmail } from "../../utils/sendEmail";
 import { Booking, BookingStatus } from "../booking/booking.modal";
 import { ITourListing } from "../listing/listing.model";
@@ -92,20 +93,23 @@ const successPayment = async (query: Record<string, string>) => {
         }
 
         await Payment.findByIdAndUpdate(updatedPayment._id, { invoiceUrl: cloudinaryResult.secure_url }, { runValidators: true, session })
+        const email = 'mdriazuddin417@gmail.com' //(updatedBooking.touristId as unknown as IUser).email
+        if (email) {
+            await sendEmail({
+                to: email,
+                subject: "Your Booking Invoice",
+                templateName: "invoice",
+                templateData: invoiceData,
+                attachments: [
+                    {
+                        filename: "invoice.pdf",
+                        content: pdfBuffer,
+                        contentType: "application/pdf"
+                    }
+                ]
+            })
+        }
 
-        await sendEmail({
-            to: (updatedBooking.touristId as unknown as IUser).email,
-            subject: "Your Booking Invoice",
-            templateName: "invoice",
-            templateData: invoiceData,
-            attachments: [
-                {
-                    filename: "invoice.pdf",
-                    content: pdfBuffer,
-                    contentType: "application/pdf"
-                }
-            ]
-        })
 
         await session.commitTransaction(); //transaction
         session.endSession()
@@ -158,8 +162,6 @@ const cancelPayment = async (query: Record<string, string>) => {
     session.startTransaction()
 
     try {
-
-
         const updatedPayment = await Payment.findOneAndUpdate({ transactionId: query.transactionId }, {
             status: PAYMENT_STATUS.CANCELLED,
         }, { runValidators: true, session: session })
@@ -196,6 +198,39 @@ const getInvoiceDownloadUrl = async (paymentId: string) => {
 
     return payment.invoiceUrl
 };
+// const getAllPayments = async () => {
+//     const payments = await Payment.find()
+//         .populate({
+//             path: "booking",
+//             populate: {
+//                 path: "tourListingId",
+//                 populate: {
+//                     path: "division",
+//                     populate: {
+//                         path: "tourType"
+//                     }
+//                 }
+//             }
+//         })
+//         .populate("touristId", "name email")
+//         .populate("guideId", "name email")
+
+//     return payments
+// }
+
+ const getAllPayments = async (query: Record<string, string>) => {
+       const qb = new QueryBuilder(Payment.find(), query);
+
+        const listings = await qb.search(['booking',"touristId","guideId"])
+            .filter()
+            .sort()
+            .fields()
+            .paginate();
+
+        const [data, meta] = await Promise.all([listings.build(), qb.getMeta()]);
+
+        return { data, meta };
+    };
 
 
 export const PaymentService = {
@@ -203,5 +238,6 @@ export const PaymentService = {
     successPayment,
     failPayment,
     cancelPayment,
-    getInvoiceDownloadUrl
+    getInvoiceDownloadUrl,
+    getAllPayments
 };

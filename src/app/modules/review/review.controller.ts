@@ -6,13 +6,17 @@ import { ReviewService } from './review.service';
 
 export const ReviewController = {
   createReview: catchAsync(async (req: Request, res: Response) => {
-    const payload = { ...req.body, touristId: (req as unknown as { user: { _id: string } }).user?._id };
+    const payload = { ...req.body };
     const data = await ReviewService.createReview(payload);
     return sendResponse(res, { statusCode: 201, success: true, message: 'Review created', data });
   }),
 
   getReviewsByGuide: catchAsync(async (req: Request, res: Response) => {
     const data = await ReviewService.getReviewsByGuide(req.params.guideId, req.query as Record<string, string>);
+    return sendResponse(res, { statusCode: 200, success: true, message: 'Reviews', data });
+  }),
+  getReviewsByTourist: catchAsync(async (req: Request, res: Response) => {
+    const data = await ReviewService.getReviewsByGuide(req.params.touristId, req.query as Record<string, string>);
     return sendResponse(res, { statusCode: 200, success: true, message: 'Reviews', data });
   }),
 

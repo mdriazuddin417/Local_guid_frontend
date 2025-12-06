@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { Types } from 'mongoose';
 import { catchAsync } from '../../utils/catchAsync';
 import { sendResponse } from '../../utils/sendResponse';
 import { IUser } from '../user/user.interface';
@@ -8,7 +7,7 @@ import { BookingService } from './booking.service';
 
 export const BookingController = {
   createBooking: catchAsync(async (req: Request, res: Response) => {
-    const payload = { ...req.body, touristId: (req as unknown as { user: IUser }).user?._id as Types.ObjectId };
+    const payload = { ...req.body };
     const data = await BookingService.createBooking(payload);
     return sendResponse(res, { statusCode: 201, success: true, message: 'Booking created', data });
   }),

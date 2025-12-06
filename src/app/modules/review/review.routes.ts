@@ -6,8 +6,10 @@ import { ReviewController } from './review.controller';
 
 const router = Router();
 
-router.post('/',  checkAuth(Role.TOURIST), ReviewController.createReview);
+router.post('/', checkAuth(Role.TOURIST, Role.ADMIN), ReviewController.createReview);
 router.get('/guide/:guideId', ReviewController.getReviewsByGuide);
-router.get('/',  checkAuth(Role.ADMIN), ReviewController.getAllReviews);
+router.get('/tourist/:touristId', ReviewController.getReviewsByTourist);
+router.get('/', checkAuth(Role.ADMIN), ReviewController.getAllReviews);
 
-export default router;
+
+export const ReviewRoutes = router;

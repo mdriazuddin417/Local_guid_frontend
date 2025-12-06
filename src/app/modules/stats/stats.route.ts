@@ -21,7 +21,7 @@ router.get(
     StatsController.getUserStats
 );
 router.get(
-    "/tour",
+    "/listing",
     checkAuth(Role.ADMIN),
     StatsController.getTourStats
 );

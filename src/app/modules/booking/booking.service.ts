@@ -1,5 +1,5 @@
 
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import AppError from '../../errorHelpers/AppError';
 import { QueryBuilder } from '../../utils/QueryBuilder';
 import { TourListing } from '../listing/listing.model';
@@ -10,62 +10,88 @@ import { Payment } from '../payment/payment.model';
 import { ISSLCommerz } from '../sslCommerz/sslCommerz.interface';
 import { SSLService } from '../sslCommerz/sslCommerz.service';
 import { IUser, Role } from '../user/user.interface';
+import { User } from '../user/user.model';
 import { Booking, BookingStatus, IBooking } from './booking.modal';
 
 export const BookingService = {
   createBooking: async (payload: IBooking) => {
-    const tour = await TourListing.findById(payload.tourListingId);
-    if (!tour) {
-      throw new AppError(404, 'Listing not found');
-    };
-    const transactionId = getTransactionId()
-    const totalPrice = (tour.price || 0) * (Number(payload.groupSize) || 1);
+    // 1. Start the Session
+    const session = await mongoose.startSession();
 
-    const booking = await Booking.create({
-      touristId: new Types.ObjectId(payload.touristId),
-      guideId: new Types.ObjectId(tour.guideId),
-      tourListingId: new Types.ObjectId(tour._id as string),
-      requestedDate: new Date(payload.requestedDate),
-      groupSize: Number(payload.groupSize) || 1,
-      totalPrice,
-      notes: payload.notes || '',
-      status: BookingStatus.PENDING as BookingStatus,
-      paymentStatus: PAYMENT_STATUS.UNPAID as PAYMENT_STATUS | 'UNPAID',
-      paymentId: payload.paymentId ? new Types.ObjectId(payload.paymentId as string) : undefined as Types.ObjectId | undefined
-    });
-    const payment = await Payment.create([{
-      booking: booking._id as Types.ObjectId,
-      status: PAYMENT_STATUS.UNPAID,
-      transactionId: transactionId,
-      amount: totalPrice
-    }]);
-    const updatedBooking = await Booking
-      .findByIdAndUpdate(
-        booking._id as Types.ObjectId,
-        { payment: payment[0]._id as Types.ObjectId },
-        { new: true, runValidators: true, }
-      )
-      .populate("tourListingId", "title price")
-      .populate("touristId", "name email phone address")
-      .populate("payment", "status transactionId amount");
+    try {
+      // 2. Start Transaction
+      session.startTransaction();
 
-    const userAddress = (updatedBooking?.touristId as unknown as IUser).address
-    const userEmail = (updatedBooking?.touristId as unknown as IUser).email
-    const userPhoneNumber = (updatedBooking?.touristId as unknown as IUser).phone
-    const userName = (updatedBooking?.touristId as unknown as IUser).name
+      // --- Step A: Validation (Read operations inside session) ---
+      const tour = await TourListing.findById({ _id: new Types.ObjectId(payload.tourListingId) }).session(session); // convert string to ObjectId
+      if (!tour) {
+        throw new AppError(404, 'Listing not found');
+      }
+      const touristExists = await User.findById({ _id: new Types.ObjectId(payload.touristId) }).session(session); // convert string to ObjectId
+      if (!touristExists) {
+        throw new AppError(404, 'Tourist/User not found');
+      }
 
-    const sslPayload: ISSLCommerz = {
-      address: userAddress || '',
-      email: userEmail || '',
-      phoneNumber: userPhoneNumber || '',
-      name: userName || '',
-      amount: totalPrice,
-      transactionId: transactionId
-    }
-    const sslPayment = await SSLService.sslPaymentInit(sslPayload)
-    return {
-      paymentUrl: sslPayment.GatewayPageURL,
-      booking: updatedBooking
+      const transactionId = getTransactionId();
+      const totalPrice = (tour.price || 0) * (Number(payload.groupSize) || 1);
+
+      const [booking] = await Booking.create([{
+        touristId: new Types.ObjectId(payload.touristId),
+        guideId: new Types.ObjectId(tour.guideId),
+        tourListingId: new Types.ObjectId(tour._id as string),
+        requestedDate: new Date(payload.requestedDate),
+        groupSize: Number(payload.groupSize) || 1,
+        totalPrice,
+        notes: payload.notes || '',
+        status: BookingStatus.PENDING as BookingStatus,
+        paymentStatus: PAYMENT_STATUS.UNPAID as PAYMENT_STATUS | 'UNPAID',
+        paymentId: payload.paymentId ? new Types.ObjectId(payload.paymentId as string) : undefined
+      }], { session });
+
+
+      const [payment] = await Payment.create([{
+        booking: booking._id,
+        status: PAYMENT_STATUS.UNPAID,
+        transactionId: transactionId,
+        amount: totalPrice
+      }], { session });
+
+
+      const updatedBooking = await Booking
+        .findByIdAndUpdate(
+          booking._id,
+          { paymentId: payment._id },
+          { new: true, runValidators: true, session }
+        )
+        .populate("tourListingId", "title price")
+        .populate("touristId", "name email phone address")
+        .populate("paymentId", "status transactionId amount");
+
+
+      const touristDetails = updatedBooking?.touristId as unknown as IUser;
+
+      const sslPayload: ISSLCommerz = {
+        address: touristDetails?.address || 'Address not provided',
+        email: touristDetails?.email || 'no-email@example.com',
+        phoneNumber: touristDetails?.phone || '0000000000',
+        name: touristDetails?.name || 'Guest',
+        amount: totalPrice,
+        transactionId: transactionId
+      };
+      const sslPayment = await SSLService.sslPaymentInit(sslPayload);
+      await session.commitTransaction();
+      await session.endSession();
+
+      return {
+        paymentUrl: sslPayment.GatewayPageURL,
+        booking: updatedBooking
+      };
+
+    } catch (error) {
+
+      await session.abortTransaction();
+      await session.endSession();
+      throw error;
     }
   },
 

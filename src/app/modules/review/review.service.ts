@@ -32,6 +32,12 @@ export const ReviewService = {
     const meta = await qb.getMeta();
     return { data: docs, meta };
   },
+  getReviewsByTourist: async (touristId: string, query: Record<string, string>) => {
+    const qb = new QueryBuilder(Review.find({ touristId }), query);
+    const docs = await qb.search(reviewSortableFields).filter().sort().paginate().fields().build();
+    const meta = await qb.getMeta();
+    return { data: docs, meta };
+  },
 
   getAllReviews: async (query: Record<string, string>) => {
     const qb = new QueryBuilder(Review.find(), query);

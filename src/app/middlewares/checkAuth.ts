@@ -11,7 +11,7 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
 
     try {
         const accessToken = req.cookies?.accessToken;
-        console.error("accessToken", accessToken);
+
 
         if (!accessToken) {
             throw new AppError(403, "No Token Received")
@@ -19,9 +19,9 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
 
 
         const verifiedToken = verifyToken(accessToken, envVars.JWT_ACCESS_SECRET) as JwtPayload
-        console.error("verifiedToken", verifiedToken);
+
         const isUserExist = await User.findOne({ email: verifiedToken.email })
-        console.error("isUserExist", isUserExist);
+
         if (!isUserExist) {
             throw new AppError(httpStatus.BAD_REQUEST, "User does not exist")
         }
@@ -42,7 +42,7 @@ export const checkAuth = (...authRoles: string[]) => async (req: Request, res: R
         next()
 
     } catch (error) {
-        console.log("jwt error", error);
+
         next(error)
     }
 }

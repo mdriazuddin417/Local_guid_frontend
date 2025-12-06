@@ -3,6 +3,8 @@ import { AuthRoutes } from "../modules/auth/auth.route"
 import { BookingRoutes } from "../modules/booking/booking.routes"
 import { ListingRoutes } from "../modules/listing/listing.routes"
 import { PaymentRoutes } from "../modules/payment/payment.route"
+import { ReviewRoutes } from "../modules/review/review.routes"
+import { StatsRoutes } from "../modules/stats/stats.route"
 import { TourTypeRoutes } from "../modules/tourType/tourType.routes"
 import { UserRoutes } from "../modules/user/user.route"
 
@@ -33,18 +35,19 @@ const moduleRoutes = [
         path: "/payment",
         route: PaymentRoutes
     },
+    {
+        path: "/review",
+        route: ReviewRoutes
+    },
     // {
     //     path: "/otp",
     //     route: OtpRoutes
     // },
-    // {
-    //     path: "/stats",
-    //     route: StatsRoutes
-    // },
-    // {
-    //     path: "/tour",
-    //     route: TourRoutes
-    // },
+    {
+        path: "/stats",
+        route: StatsRoutes
+    },
+
 ]
 
 moduleRoutes.forEach((route) => {

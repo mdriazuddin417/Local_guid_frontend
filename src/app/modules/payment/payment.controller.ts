@@ -64,6 +64,15 @@ const validatePayment = catchAsync(
         });
     }
 );
+const getAllPayments = catchAsync(async (req: Request, res: Response) => {
+    const result = await PaymentService.getAllPayments(req.query as Record<string, string>);
+    sendResponse(res, {
+        statusCode: 200,
+        success: true,
+        message: "Payments fetched successfully",
+        data: result,
+    });
+});
 
 export const PaymentController = {
     initPayment,
@@ -71,5 +80,6 @@ export const PaymentController = {
     failPayment,
     cancelPayment,
     getInvoiceDownloadUrl,
-    validatePayment
+    validatePayment,
+    getAllPayments
 };

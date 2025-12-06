@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Booking } from "../booking/booking.model";
+import { Booking } from "../booking/booking.modal";
+import { TourListing } from "../listing/listing.model";
 import { PAYMENT_STATUS } from "../payment/payment.interface";
 import { Payment } from "../payment/payment.model";
-import { Tour } from "../tour/tour.model";
 import { IsActive } from "../user/user.interface";
 import { User } from "../user/user.model";
 
@@ -57,9 +57,9 @@ const getUserStats = async () => {
 }
 
 const getTourStats = async () => {
-    const totalTourPromise = Tour.countDocuments();
+    const totalTourPromise = TourListing.countDocuments();
 
-    const totalTourByTourTypePromise = Tour.aggregate([
+    const totalTourByTourTypePromise = TourListing.aggregate([
         // stage-1 : connect Tour Type model - lookup stage
         {
             $lookup: {
@@ -84,7 +84,7 @@ const getTourStats = async () => {
         }
     ])
 
-    const avgTourCostPromise = Tour.aggregate([
+    const avgTourCostPromise = TourListing.aggregate([
         //Stage-1 : group the cost from, do sum, and average the sum
         {
             $group: {
@@ -94,7 +94,7 @@ const getTourStats = async () => {
         }
     ])
 
-    const totalTourByDivisionPromise = Tour.aggregate([
+    const totalTourByDivisionPromise = TourListing.aggregate([
         // stage-1 : connect Division model - lookup stage
         {
             $lookup: {
@@ -337,28 +337,6 @@ const getPaymentStats = async () => {
     ])
     return { totalPayment, totalPaymentByStatus, totalRevenue, avgPaymentAmount, paymentGatewayData }
 }
-
-
-/**
- * await Tour.updateMany(
-        {
-            // Only update where tourType or division is stored as a string
-            $or: [
-                { tourType: { $type: "string" } },
-                { division: { $type: "string" } }
-            ]
-        },
-        [
-            {
-                $set: {
-                    tourType: { $toObjectId: "$tourType" },
-                    division: { $toObjectId: "$division" }
-                }
-            }
-        ]
-    );
- */
-
 
 
 export const StatsService = {
