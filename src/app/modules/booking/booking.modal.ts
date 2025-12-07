@@ -33,7 +33,7 @@ const BookingSchema = new Schema<IBooking>({
   groupSize: { type: Number, default: 1 },
   totalPrice: { type: Number, required: true },
   notes: String,
-  paymentId: Schema.Types.ObjectId,
+  paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
   completedAt: Date
 }, { timestamps: true });
 

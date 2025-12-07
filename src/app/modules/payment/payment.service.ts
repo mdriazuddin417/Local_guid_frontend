@@ -232,6 +232,14 @@ const getInvoiceDownloadUrl = async (paymentId: string) => {
         return { data, meta };
     };
 
+const getPaymentById = async (id: string) => {
+    const payment = await Payment.findById(id);
+    if (!payment) {
+        throw new AppError(404, "Payment not found");
+    }
+    return payment;
+};
+
 
 export const PaymentService = {
     initPayment,
@@ -239,5 +247,6 @@ export const PaymentService = {
     failPayment,
     cancelPayment,
     getInvoiceDownloadUrl,
-    getAllPayments
+    getAllPayments,
+    getPaymentById
 };

@@ -131,6 +131,7 @@ export const BookingService = {
   getBookingById: async (id: string) => {
     const booking = await Booking.findById(id)
       .populate('tourListingId')
+      .populate('paymentId')
       .populate({ path: 'guideId', select: '-password' })
       .populate({ path: 'touristId', select: '-password' });
 
