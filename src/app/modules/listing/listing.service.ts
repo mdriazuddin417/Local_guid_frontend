@@ -9,7 +9,7 @@ export const ListingService = {
     },
 
     getListings: async (query: Record<string, string>) => {
-        console.log('getListings query', query);
+        // console.log('getListings query', query);
         const qb = new QueryBuilder(TourListing.find({ isActive: true }), query);
 
         const listings = await qb.search(tourListingSortableFields)
@@ -24,11 +24,13 @@ export const ListingService = {
     },
 
     getListingById: async (id: string) => {
-        const listing = await TourListing.findById(id);
+        const listing = await TourListing.findById(id).populate('guideId','-password');
+
         if (!listing) {
             throw new AppError(404, 'Listing not found');
         }
-        return listing
+
+        return listing;
     },
 
     updateListing: async (id: string, payload: Record<string, string>) => {

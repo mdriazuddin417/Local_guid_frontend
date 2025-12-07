@@ -18,7 +18,7 @@ export interface IBooking extends Document {
   groupSize: number;
   totalPrice: number;
   notes?: string;
-  paymentId?: string | Types.ObjectId;
+  paymentId?: Types.ObjectId;
   completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -33,7 +33,7 @@ const BookingSchema = new Schema<IBooking>({
   groupSize: { type: Number, default: 1 },
   totalPrice: { type: Number, required: true },
   notes: String,
-  paymentId: String,
+  paymentId: Schema.Types.ObjectId,
   completedAt: Date
 }, { timestamps: true });
 

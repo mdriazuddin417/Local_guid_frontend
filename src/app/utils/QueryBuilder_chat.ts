@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Query } from 'mongoose';
 
 type QueryOptions = Record<string, any>;
@@ -23,28 +24,43 @@ export default class QueryBuilder {
   }
 
   filter() {
-    const qs = { ...this.originalQuery };
-    const reserved = ['q','page','limit','sort','fields'];
-    reserved.forEach(r => delete qs[r]);
+  const qs = { ...this.originalQuery };
+  const reserved = ['q','page','limit','sort','fields','minPrice','maxPrice'];
+  reserved.forEach(r => delete qs[r]);
 
-    const filterObj: any = {};
-    Object.entries(qs).forEach(([key, value]) => {
-      if (key.includes('[')) {
-        const matches = key.match(/(.+)\[(.+)\]/);
-        if (matches) {
-          const field = matches[1]; const op = matches[2];
-          const map: any = { gt: '$gt', gte: '$gte', lt: '$lt', lte: '$lte', ne: '$ne' };
-          if (!filterObj[field]) filterObj[field] = {};
-          filterObj[field][map[op]] = this.parseValue(value);
-        }
-      } else {
-        filterObj[key] = this.parseValue(value);
+  const filterObj: any = {};
+
+  Object.entries(qs).forEach(([key, value]) => {
+    if (key.includes('[')) {
+      const matches = key.match(/(.+)\[(.+)\]/);
+      if (matches) {
+        const field = matches[1]; const op = matches[2];
+        const map: any = { gt: '$gt', gte: '$gte', lt: '$lt', lte: '$lte', ne: '$ne' };
+        if (!filterObj[field]) filterObj[field] = {};
+        filterObj[field][map[op]] = this.parseValue(value);
       }
-    });
+    } else {
+      filterObj[key] = this.parseValue(value);
+    }
+  });
 
-    if (Object.keys(filterObj).length) this.baseQuery = (this.baseQuery as any).find(filterObj);
-    return this;
+  // ⭐ Add price filtering
+  if (this.originalQuery.minPrice || this.originalQuery.maxPrice) {
+    filterObj.price = {};
+    if (this.originalQuery.minPrice) {
+      filterObj.price.$gte = Number(this.originalQuery.minPrice);
+    }
+    if (this.originalQuery.maxPrice) {
+      filterObj.price.$lte = Number(this.originalQuery.maxPrice);
+    }
   }
+
+  if (Object.keys(filterObj).length) {
+    this.baseQuery = (this.baseQuery as any).find(filterObj);
+  }
+
+  return this;
+}
 
   sort() {
     const sort = this.originalQuery.sort;
