@@ -29,7 +29,7 @@ export const BookingController = {
   }),
 
   cancelBooking: catchAsync(async (req: Request, res: Response) => {
-    const data = await BookingService.cancelBooking(req.params.id, (req as unknown as { user: IUser }).user as IUser);
+    const data = await BookingService.cancelBooking(req.params.id);
     return sendResponse(res, { statusCode: 200, success: true, message: 'Booking cancelled', data });
   })
 };

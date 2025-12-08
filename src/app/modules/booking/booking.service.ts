@@ -46,7 +46,7 @@ export const BookingService = {
         notes: payload.notes || '',
         status: BookingStatus.PENDING as BookingStatus,
         paymentStatus: PAYMENT_STATUS.UNPAID as PAYMENT_STATUS | 'UNPAID',
-        paymentId: payload.paymentId ? new Types.ObjectId(payload.paymentId as string) : undefined
+        paymentId: payload.paymentId ? new Types.ObjectId(payload.paymentId as unknown as string) : undefined
       }], { session });
 
 
