@@ -23,8 +23,7 @@ export const BookingController = {
   }),
 
   getBookings: catchAsync(async (req: Request, res: Response) => {
-    const user = (req as unknown as { user: IUser }).user as IUser
-    console.log('user booking',user);
+
     const data = await BookingService.getBookings(req.query as unknown as Record<string, string>, (req as unknown as { user: IUser }).user as IUser);
 
     return sendResponse(res, { statusCode: 200, success: true, message: 'Bookings', data: data });
